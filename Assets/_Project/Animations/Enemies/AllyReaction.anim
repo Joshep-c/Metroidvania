@@ -5,7 +5,7 @@ AnimationClip:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: AttackGround
+  m_Name: AllyReaction
   serializedVersion: 6
   m_Legacy: 0
   m_Compressed: 0
@@ -19,15 +19,15 @@ AnimationClip:
   m_PPtrCurves:
   - curve:
     - time: 0
-      value: {fileID: 21300000, guid: ae67d0419ca79e74a93b64948f5ea4c5, type: 3}
+      value: {fileID: 21300000, guid: ebb56865947a97e48af274a0d7cf64aa, type: 3}
     - time: 0.083333336
-      value: {fileID: 21300000, guid: a208ce64bfefe9543853ef4c961646b4, type: 3}
+      value: {fileID: 21300000, guid: cd028e50f1857164899e58c56cf33086, type: 3}
     - time: 0.16666667
-      value: {fileID: 21300000, guid: 100a6e03bfe13fd408ece5114fdda30e, type: 3}
+      value: {fileID: 21300000, guid: 9d1c95d5e011fb248a5016aec18b66fe, type: 3}
     - time: 0.25
-      value: {fileID: 21300000, guid: abd6950dedc2d774e8ab3e0b081f7afd, type: 3}
+      value: {fileID: 21300000, guid: 9d1c95d5e011fb248a5016aec18b66fe, type: 3}
     attribute: m_Sprite
-    path: 
+    path:
     classID: 212
     script: {fileID: 0}
   m_SampleRate: 60
@@ -45,10 +45,10 @@ AnimationClip:
       customType: 23
       isPPtrCurve: 1
     pptrCurveMapping:
-    - {fileID: 21300000, guid: ae67d0419ca79e74a93b64948f5ea4c5, type: 3}
-    - {fileID: 21300000, guid: a208ce64bfefe9543853ef4c961646b4, type: 3}
-    - {fileID: 21300000, guid: 100a6e03bfe13fd408ece5114fdda30e, type: 3}
-    - {fileID: 21300000, guid: abd6950dedc2d774e8ab3e0b081f7afd, type: 3}
+    - {fileID: 21300000, guid: ebb56865947a97e48af274a0d7cf64aa, type: 3}
+    - {fileID: 21300000, guid: cd028e50f1857164899e58c56cf33086, type: 3}
+    - {fileID: 21300000, guid: 9d1c95d5e011fb248a5016aec18b66fe, type: 3}
+    - {fileID: 21300000, guid: 9d1c95d5e011fb248a5016aec18b66fe, type: 3}
   m_AnimationClipSettings:
     serializedVersion: 2
     m_AdditiveReferencePoseClip: {fileID: 0}
@@ -74,11 +74,4 @@ AnimationClip:
   m_HasGenericRootTransform: 0
   m_HasMotionFloatCurves: 0
   m_GenerateMotionCurves: 0
-  m_Events:
-  - time: 0.083333336
-    functionName: DoDashDamage
-    data: 
-    objectReferenceParameter: {fileID: 0}
-    floatParameter: 0
-    intParameter: 0
-    messageOptions: 0
+  m_Events: []

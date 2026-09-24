@@ -32,11 +32,11 @@ public class Met_Enemy : MonoBehaviour
 
 	private bool isPlat;
 	private bool isObstacle;
+	private bool dying;
+	private bool registered;
 
 	void Awake()
 	{
-		GameManager.Instance.RegisterEnemy();
-
 		if (fallCheck == null)
 		{
 			Transform t = transform.Find("FallCheck");
@@ -50,6 +50,16 @@ public class Met_Enemy : MonoBehaviour
 			else Debug.LogWarning(gameObject.name + ": no se encontró un hijo llamado 'WallCheck'.");
 		}
 		rb = GetComponent<Rigidbody2D>();
+		facingRight = transform.localScale.x > 0f;
+	}
+
+	void Start()
+	{
+		if (GameManager.Instance != null)
+		{
+			GameManager.Instance.RegisterEnemy();
+			registered = true;
+		}
 	}
 
 	void FixedUpdate()
@@ -57,8 +67,12 @@ public class Met_Enemy : MonoBehaviour
 
 		if (life <= 0)
 		{
-			transform.GetComponent<Animator>().SetBool("IsDead", true);
-			StartCoroutine(DestroyEnemy());
+			if (!dying)
+			{
+				dying = true;
+				GetComponent<Animator>().SetBool("IsDead", true);
+				StartCoroutine(DestroyEnemy());
+			}
 			return;
 		}
 
@@ -71,7 +85,7 @@ public class Met_Enemy : MonoBehaviour
 		{
 			if (isPlat && !isObstacle)
 			{
-				rb.linearVelocity = new Vector2(facingRight ? -speed : speed, rb.linearVelocity.y);
+				rb.linearVelocity = new Vector2(facingRight ? speed : -speed, rb.linearVelocity.y);
 			}
 			else
 			{
@@ -90,7 +104,7 @@ public class Met_Enemy : MonoBehaviour
 
 	public void ApplyDamage(float damage)
 	{
-		if (!isInvincible)
+		if (!isInvincible && life > 0f && !Mathf.Approximately(damage, 0f))
 		{
 			float direction = damage / Mathf.Abs(damage);
 			damage = Mathf.Abs(damage);
@@ -134,14 +148,12 @@ public class Met_Enemy : MonoBehaviour
 	IEnumerator DestroyEnemy()
 	{
 		CapsuleCollider2D capsule = GetComponent<CapsuleCollider2D>();
-		capsule.size = new Vector2(1f, 0.25f);
-		capsule.offset = new Vector2(0f, -0.8f);
-		capsule.direction = CapsuleDirection2D.Horizontal;
-		yield return new WaitForSeconds(0.25f);
-		rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
-		yield return new WaitForSeconds(3f);
+		if (capsule != null) capsule.enabled = false;
+		rb.linearVelocity = Vector2.zero;
+		yield return new WaitForSeconds(1f);
 
-		GameManager.Instance.EnemyDefeated();
+		if (registered && GameManager.Instance != null)
+			GameManager.Instance.EnemyDefeated();
 
 		Destroy(gameObject);
 	}

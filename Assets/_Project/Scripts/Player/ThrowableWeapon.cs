@@ -1,48 +1,45 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class ThrowableWeapon : MonoBehaviour
 {
 	public Vector2 direction;
 	public bool hasHit = false;
 	public float speed = 10f;
+	private Rigidbody2D rb;
 
-	void Start()
+	void Awake()
 	{
-
+		rb = GetComponent<Rigidbody2D>();
+		SpriteRenderer renderer = GetComponent<SpriteRenderer>();
+		if (renderer != null)
+		{
+			renderer.sprite = CombatVisuals.Projectile;
+			renderer.sortingOrder = 10;
+		}
+		Destroy(gameObject, 5f);
 	}
 
 	void FixedUpdate()
 	{
 		if (!hasHit)
-			GetComponent<Rigidbody2D>().linearVelocity = direction * speed;
+			rb.linearVelocity = direction.normalized * speed;
 	}
 
 	void OnCollisionEnter2D(Collision2D collision)
 	{
-		Debug.Log("COLISION DETECTADA con: " + collision.gameObject.name + " | Tag: " + collision.gameObject.tag);
-
 		if (collision.gameObject.CompareTag("Enemy"))
 		{
-			bool didDamage = false;
-
 			Ally ally = collision.gameObject.GetComponentInParent<Ally>();
 			if (ally != null)
 			{
 				ally.ApplyDamage(Mathf.Sign(direction.x) * 2f);
-				didDamage = true;
 			}
 
 			Met_Enemy metEnemy = collision.gameObject.GetComponentInParent<Met_Enemy>();
 			if (metEnemy != null)
 			{
 				metEnemy.ApplyDamage(Mathf.Sign(direction.x) * 2f);
-				didDamage = true;
 			}
-
-			if (!didDamage)
-				Debug.LogWarning(collision.gameObject.name + " tiene tag Enemy pero no tiene Ally ni Met_Enemy. Revisa el prefab.");
 
 			Destroy(gameObject);
 		}

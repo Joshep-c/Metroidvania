@@ -4,7 +4,7 @@ Demo 2D de plataformas creada con Unity, con movimiento de personaje, combate co
 
 ## Requisitos
 
-- Unity `6000.0.73f1`.
+- Unity `6000.6.1f1`.
 - Los paquetes del proyecto se restauran desde `Packages/manifest.json`, incluyendo URP 2D, Cinemachine y el Input System.
 
 ## Ejecutar la demo
@@ -16,21 +16,21 @@ Demo 2D de plataformas creada con Unity, con movimiento de personaje, combate co
 
 3. Pulsa **Play** en el editor.
 
-Esta es la escena de prueba funcional. Incluye el nivel de tilemaps, el jugador, enemigos, `GameManager`, la camara y los paneles de victoria y derrota.
+Esta es la escena de prueba funcional. Incluye el nivel de tilemaps, el jugador, enemigos, `GameManager`, la camara, un HUD con vida y enemigos restantes, un limite inferior para detectar caidas y los paneles de victoria y derrota.
 
-> Nota: antes de crear una compilacion, agrega `Assets/_Project/Scenes/Test/Template1.unity` a **File > Build Profiles > Scenes In Build**. La configuracion actual de escenas conserva referencias antiguas que no existen en el proyecto.
+La escena ya esta incluida en **Scenes In Build**, por lo que tambien se puede reiniciar desde las pantallas de victoria y derrota en una compilacion.
 
 ## Controles de la demo
 
-| Accion | Tecla |
-| --- | --- |
-| Moverse | `A` / `D` o flechas izquierda / derecha |
-| Saltar, doble salto y salto de pared | `Z` |
-| Dash | `C` |
-| Ataque cuerpo a cuerpo | `X` |
-| Lanzar arma | `V` |
+| Accion | Teclado | Mando |
+| --- | --- | --- |
+| Moverse | `A` / `D` o flechas izquierda / derecha | Stick izquierdo o cruceta |
+| Saltar, doble salto y salto de pared | `Z` o espacio | Boton inferior |
+| Dash | `C` | Boton superior derecho (RB/R1) |
+| Ataque cuerpo a cuerpo | `X` | Boton izquierdo |
+| Lanzar arma | `V` | Boton derecho |
 
-Los controles de esta escena estan implementados con el Input Manager clasico de Unity en los scripts del jugador. El asset `Assets/InputSystem_Actions.inputactions` permanece disponible para una futura migracion al nuevo Input System.
+Los controles del jugador usan `Assets/InputSystem_Actions.inputactions` mediante el nuevo Input System. El stick izquierdo tiene zona muerta para evitar desplazamientos accidentales.
 
 ## Estructura relevante
 

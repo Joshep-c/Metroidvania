@@ -7,46 +7,49 @@ public class CameraFollow : MonoBehaviour
 	public float FollowSpeed = 2f;
 	public Transform Target;
 
-	private Transform camTransform;
-
 	public float shakeDuration = 0f;
 
 	public float shakeAmount = 0.1f;
 	public float decreaseFactor = 1.0f;
 
-	Vector3 originalPos;
+	Vector3 targetPosition;
 
-	void Awake()
+	private void Start()
 	{
-		Cursor.visible = false;
-		if (camTransform == null)
+		FindTarget();
+		if (Target != null)
+			transform.position = new Vector3(Target.position.x, Target.position.y, -10f);
+	}
+
+	private void FindTarget()
+	{
+		if (Target != null) return;
+		GameObject player = GameObject.FindGameObjectWithTag("Player");
+		if (player != null) Target = player.transform;
+	}
+
+	private void LateUpdate()
+	{
+		if (Target == null)
 		{
-			camTransform = GetComponent(typeof(Transform)) as Transform;
+			FindTarget();
+			if (Target == null) return;
 		}
-	}
-
-	void OnEnable()
-	{
-		originalPos = camTransform.localPosition;
-	}
-
-	private void Update()
-	{
 		Vector3 newPosition = Target.position;
-		newPosition.z = -10;
-		transform.position = Vector3.Slerp(transform.position, newPosition, FollowSpeed * Time.deltaTime);
+		newPosition.z = -10f;
+		targetPosition = Vector3.Lerp(transform.position, newPosition, Mathf.Clamp01(FollowSpeed * Time.deltaTime));
 
 		if (shakeDuration > 0)
 		{
-			camTransform.localPosition = originalPos + Random.insideUnitSphere * shakeAmount;
-
+			Vector2 offset = Random.insideUnitCircle * shakeAmount;
+			targetPosition += new Vector3(offset.x, offset.y, 0f);
 			shakeDuration -= Time.deltaTime * decreaseFactor;
 		}
+		transform.position = targetPosition;
 	}
 
 	public void ShakeCamera()
 	{
-		originalPos = camTransform.localPosition;
 		shakeDuration = 0.2f;
 	}
 }

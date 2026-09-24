@@ -282,9 +282,15 @@ MonoBehaviour:
   enemy: {fileID: 0}
   meleeDist: 1.5
   rangeDist: 5
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 1048576
+  edgeCheckRadius: 0.45
   dmgValue: 4
-  throwableObject: {fileID: 5532974359214069763, guid: c928b20c45c6dcd458c1b9a8c6226d54,
-    type: 2}
+  attackCheckRadius: 1.3
+  throwableObject: {fileID: 5532974359214069763, guid: b983fefea18ad334f9e822f1ac2c063b,
+    type: 3}
+  rangedAttackCooldown: 0.8
 --- !u!212 &212832719579855464
 SpriteRenderer:
   m_ObjectHideFlags: 1

@@ -19,9 +19,12 @@ public class Ally : MonoBehaviour
 	[Header("Detección y persecución")]
 	[Tooltip("El jugador. Se asigna automáticamente por tag si se deja vacío.")]
 	public GameObject enemy;
-	[Tooltip("Radio de persecución: si el jugador está más lejos que esto, el slime se queda quieto")]
+	[Tooltip("Radio de visión y alcance: los obstáculos del suelo bloquean la vista")]
 	public float rangeDist = 5f;
 	public float meleeDist = 1.5f;
+	[SerializeField] private LayerMask groundLayer;
+	[SerializeField] private float edgeCheckRadius = 0.45f;
+	private Transform fallCheck;
 	private float distToPlayer;
 	private float distToPlayerY;
 
@@ -29,18 +32,23 @@ public class Ally : MonoBehaviour
 	public float dmgValue = 4;
 	private bool canAttack = true;
 	private Transform attackCheck;
-	public float attackCheckRadius = 0.9f;
+	public float attackCheckRadius = 1.3f;
 	public GameObject throwableObject;
+	[SerializeField] private float rangedAttackCooldown = 0.8f;
 
 	private bool doOnceDecision = true;
+	private float nextRangedAttackTime;
+	private Collider2D playerCollider;
 	private Animator anim;
+	private bool dying;
+	private bool registered;
 
 	void Awake()
 	{
-		GameManager.Instance.RegisterEnemy();
-
 		m_Rigidbody2D = GetComponent<Rigidbody2D>();
 		anim = GetComponent<Animator>();
+		m_FacingRight = transform.localScale.x > 0f;
+		fallCheck = transform.Find("FallCheck");
 
 		Transform t = transform.Find("AttackCheck");
 		if (t != null)
@@ -49,18 +57,32 @@ public class Ally : MonoBehaviour
 			Debug.LogWarning(gameObject.name + ": no se encontró un hijo llamado 'AttackCheck'.");
 	}
 
+	void Start()
+	{
+		if (GameManager.Instance != null)
+		{
+			GameManager.Instance.RegisterEnemy();
+			registered = true;
+		}
+	}
+
 	void FixedUpdate()
 	{
 		if (life <= 0)
 		{
-			StartCoroutine(DestroyEnemy());
+			if (!dying)
+			{
+				dying = true;
+				StartCoroutine(DestroyEnemy());
+			}
 			return;
 		}
 
 		if (enemy == null)
 		{
 			enemy = GameObject.FindGameObjectWithTag("Player");
-			return;
+			playerCollider = null;
+			if (enemy == null) return;
 		}
 
 		if (isDashing)
@@ -71,45 +93,53 @@ public class Ally : MonoBehaviour
 		{
 			distToPlayer = enemy.transform.position.x - transform.position.x;
 			distToPlayerY = enemy.transform.position.y - transform.position.y;
-
-			if (Mathf.Abs(distToPlayer) < 0.25f)
+			if (!CanSeePlayer())
 			{
-				m_Rigidbody2D.linearVelocity = new Vector2(0f, m_Rigidbody2D.linearVelocity.y);
-				anim.SetBool("IsWaiting", true);
+				Idle();
+				return;
 			}
-			else if (Mathf.Abs(distToPlayer) > 0.25f && Mathf.Abs(distToPlayer) < meleeDist && Mathf.Abs(distToPlayerY) < 2f)
+
+			if (Mathf.Abs(distToPlayer) > 0.05f && (distToPlayer > 0f) != m_FacingRight)
+				Flip();
+
+			if (Mathf.Abs(distToPlayer) <= meleeDist && Mathf.Abs(distToPlayerY) < 1.2f)
 			{
 				m_Rigidbody2D.linearVelocity = new Vector2(0f, m_Rigidbody2D.linearVelocity.y);
-				if ((distToPlayer > 0f && transform.localScale.x < 0f) || (distToPlayer < 0f && transform.localScale.x > 0f))
-					Flip();
+				anim.SetBool("IsWaiting", false);
 				if (canAttack)
 					MeleeAttack();
 			}
-			else if (Mathf.Abs(distToPlayer) > meleeDist && Mathf.Abs(distToPlayer) < rangeDist)
-			{
-				anim.SetBool("IsWaiting", false);
-				m_Rigidbody2D.linearVelocity = new Vector2(distToPlayer / Mathf.Abs(distToPlayer) * speed, m_Rigidbody2D.linearVelocity.y);
-			}
 			else
 			{
-				Idle();
+				// Dispara también desde el borde: perseguir no es requisito para atacar.
+				RangeAttack();
+				if (Mathf.Abs(distToPlayerY) < 2.5f && Mathf.Abs(distToPlayer) > meleeDist && GroundAhead())
+				{
+					anim.SetBool("IsWaiting", false);
+					m_Rigidbody2D.linearVelocity = new Vector2(Mathf.Sign(distToPlayer) * speed, m_Rigidbody2D.linearVelocity.y);
+				}
+				else Idle();
 			}
 		}
-		else if (isHitted)
-		{
-			if ((distToPlayer > 0f && transform.localScale.x > 0f) || (distToPlayer < 0f && transform.localScale.x < 0f))
-				Flip();
-			StartCoroutine(Dash());
-		}
+		else return;
+	}
 
-		if (transform.localScale.x * m_Rigidbody2D.linearVelocity.x > 0 && !m_FacingRight && life > 0)
-		{
-			Flip();
-		}
-		else if (transform.localScale.x * m_Rigidbody2D.linearVelocity.x < 0 && m_FacingRight && life > 0)
-		{
-			Flip();
-		}
+	private Vector2 PlayerCenter()
+	{
+		if (playerCollider == null) playerCollider = enemy.GetComponent<Collider2D>();
+		return playerCollider != null ? (Vector2)playerCollider.bounds.center : (Vector2)enemy.transform.position;
+	}
+
+	private bool CanSeePlayer()
+	{
+		if (enemy == null || !enemy.activeInHierarchy) return false;
+		Met_CharacterController2D player = enemy.GetComponent<Met_CharacterController2D>();
+		if (player != null && player.life <= 0f) return false;
+
+		Vector2 origin = transform.position;
+		Vector2 target = PlayerCenter();
+		return (target - origin).sqrMagnitude <= rangeDist * rangeDist &&
+			Physics2D.Linecast(origin, target, groundLayer).collider == null;
 	}
 
 	void Flip()
@@ -122,7 +152,7 @@ public class Ally : MonoBehaviour
 
 	public void ApplyDamage(float damage)
 	{
-		if (!isInvincible)
+		if (!isInvincible && life > 0f && !Mathf.Approximately(damage, 0f))
 		{
 			float direction = damage / Mathf.Abs(damage);
 			damage = Mathf.Abs(damage);
@@ -131,11 +161,19 @@ public class Ally : MonoBehaviour
 			m_Rigidbody2D.linearVelocity = Vector2.zero;
 			m_Rigidbody2D.AddForce(new Vector2(direction * 100f, 100f));
 			StartCoroutine(HitTime());
+			if (life > 0f)
+			{
+				if ((direction > 0f) != m_FacingRight) Flip();
+				StartCoroutine(Dash());
+			}
 		}
 	}
 
 	public void MeleeAttack()
 	{
+		if (!canAttack || life <= 0f) return;
+		canAttack = false;
+		StartCoroutine(WaitToAttack(0.5f));
 		anim.SetBool("Attack", true);
 
 		if (attackCheck == null) return;
@@ -144,47 +182,51 @@ public class Ally : MonoBehaviour
 		for (int i = 0; i < collidersEnemies.Length; i++)
 		{
 			GameObject hitObj = collidersEnemies[i].gameObject;
-			if (hitObj == gameObject) continue;
+			if (hitObj.transform.root == transform.root) continue;
 
-			if (hitObj.CompareTag("Enemy"))
-			{
-				float dmg = transform.localScale.x < 0 ? -Mathf.Abs(dmgValue) : Mathf.Abs(dmgValue);
-
-				Ally allyTarget = hitObj.GetComponentInParent<Ally>();
-				if (allyTarget != null)
-					allyTarget.ApplyDamage(dmg);
-
-				Met_Enemy metTarget = hitObj.GetComponentInParent<Met_Enemy>();
-				if (metTarget != null)
-					metTarget.ApplyDamage(dmg);
-			}
-			else if (hitObj.CompareTag("Player"))
+			if (hitObj.CompareTag("Player"))
 			{
 				Met_CharacterController2D player = hitObj.GetComponent<Met_CharacterController2D>();
 				if (player != null)
-					player.ApplyDamage(2f, transform.position);
+					player.ApplyDamage(dmgValue, transform.position);
 			}
 		}
-		StartCoroutine(WaitToAttack(0.5f));
+	}
+
+	private bool GroundAhead()
+	{
+		return fallCheck == null || Physics2D.OverlapCircle(fallCheck.position, edgeCheckRadius, groundLayer) != null;
 	}
 
 	public void RangeAttack()
 	{
-		if (doOnceDecision && throwableObject != null)
+		if (Time.time >= nextRangedAttackTime && throwableObject != null && life > 0f && CanSeePlayer())
 		{
-			GameObject throwableProj = Instantiate(throwableObject, transform.position + new Vector3(transform.localScale.x * 0.5f, -0.2f), Quaternion.identity);
+			nextRangedAttackTime = Time.time + rangedAttackCooldown;
+			Vector3 origin = transform.position + new Vector3(Mathf.Sign(transform.localScale.x) * 0.9f, -0.2f);
+			GameObject throwableProj = Instantiate(throwableObject, origin, Quaternion.identity);
 			ThrowableProjectile proj = throwableProj.GetComponent<ThrowableProjectile>();
 			if (proj != null)
 			{
 				proj.owner = gameObject;
-				proj.direction = new Vector2(transform.localScale.x, 0f);
+				Vector2 aim = PlayerCenter() - (Vector2)origin;
+				proj.direction = aim.sqrMagnitude > 0.01f ? aim.normalized : new Vector2(Mathf.Sign(transform.localScale.x), 0f);
+				Collider2D ownCollider = GetComponent<Collider2D>();
+				Collider2D projectileCollider = throwableProj.GetComponent<Collider2D>();
+				if (ownCollider != null && projectileCollider != null)
+					Physics2D.IgnoreCollision(ownCollider, projectileCollider);
 			}
-			StartCoroutine(NextDecision(0.5f));
+			anim.SetBool("Attack", true);
 		}
 	}
 
 	public void Run()
 	{
+		if (!GroundAhead())
+		{
+			Idle();
+			return;
+		}
 		anim.SetBool("IsWaiting", false);
 		if (Mathf.Abs(distToPlayer) > 0.0001f)
 			m_Rigidbody2D.linearVelocity = new Vector2(distToPlayer / Mathf.Abs(distToPlayer) * speed, m_Rigidbody2D.linearVelocity.y);
@@ -211,11 +253,7 @@ public class Ally : MonoBehaviour
 	public void Idle()
 	{
 		m_Rigidbody2D.linearVelocity = new Vector2(0f, m_Rigidbody2D.linearVelocity.y);
-		if (doOnceDecision)
-		{
-			anim.SetBool("IsWaiting", true);
-			StartCoroutine(NextDecision(1f));
-		}
+		anim.SetBool("IsWaiting", true);
 	}
 
 	IEnumerator HitTime()
@@ -229,7 +267,6 @@ public class Ally : MonoBehaviour
 
 	IEnumerator WaitToAttack(float time)
 	{
-		canAttack = false;
 		yield return new WaitForSeconds(time);
 		canAttack = true;
 	}
@@ -240,6 +277,7 @@ public class Ally : MonoBehaviour
 		isDashing = true;
 		yield return new WaitForSeconds(0.1f);
 		isDashing = false;
+		anim.SetBool("IsDashing", false);
 	}
 
 	IEnumerator NextDecision(float time)
@@ -253,15 +291,13 @@ public class Ally : MonoBehaviour
 	IEnumerator DestroyEnemy()
 	{
 		CapsuleCollider2D capsule = GetComponent<CapsuleCollider2D>();
-		capsule.size = new Vector2(1f, 0.25f);
-		capsule.offset = new Vector2(0f, -0.8f);
-		capsule.direction = CapsuleDirection2D.Horizontal;
+		if (capsule != null) capsule.enabled = false;
+		m_Rigidbody2D.linearVelocity = Vector2.zero;
 		anim.SetBool("IsDead", true);
-		yield return new WaitForSeconds(0.25f);
-		m_Rigidbody2D.linearVelocity = new Vector2(0, m_Rigidbody2D.linearVelocity.y);
 		yield return new WaitForSeconds(1f);
 
-		GameManager.Instance.EnemyDefeated();
+		if (registered && GameManager.Instance != null)
+			GameManager.Instance.EnemyDefeated();
 
 		Destroy(gameObject);
 	}
@@ -272,5 +308,11 @@ public class Ally : MonoBehaviour
 		Gizmos.DrawWireSphere(transform.position, rangeDist);
 		Gizmos.color = new Color(1f, 0f, 0f, 0.5f);
 		Gizmos.DrawWireSphere(transform.position, meleeDist);
+		if (fallCheck == null) fallCheck = transform.Find("FallCheck");
+		if (fallCheck != null)
+		{
+			Gizmos.color = Color.cyan;
+			Gizmos.DrawWireSphere(fallCheck.position, edgeCheckRadius);
+		}
 	}
 }

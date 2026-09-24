@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour
 
     private int enemyCount = 0;
     private bool gameEnded = false;
+    public int RemainingEnemies => enemyCount;
 
     void Awake()
     {
@@ -20,6 +21,12 @@ public class GameManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        // La configuración heredada desactiva Enemy/Player e impide el daño por contacto.
+        int enemyLayer = LayerMask.NameToLayer("Enemy");
+        int playerLayer = LayerMask.NameToLayer("Player");
+        if (enemyLayer >= 0 && playerLayer >= 0)
+            Physics2D.IgnoreLayerCollision(enemyLayer, playerLayer, false);
     }
 
     void Start()
@@ -29,7 +36,12 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f;
     }
 
-    // Cada enemigo llama esto en su Awake, para que el GameManager sepa cuántos hay en total.
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
+    // Los enemigos se registran en Start, después de inicializar la instancia del GameManager.
     public void RegisterEnemy()
     {
         enemyCount++;
@@ -40,8 +52,8 @@ public class GameManager : MonoBehaviour
     {
         if (gameEnded) return;
 
-        enemyCount--;
-        if (enemyCount <= 0)
+        enemyCount = Mathf.Max(0, enemyCount - 1);
+        if (enemyCount == 0)
         {
             ShowWin();
         }

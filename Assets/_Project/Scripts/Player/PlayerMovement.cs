@@ -1,51 +1,87 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
-public class PlayerMovement : MonoBehaviour {
+public class PlayerMovement : MonoBehaviour
+{
+    [SerializeField] private InputActionAsset inputActions;
+    public Met_CharacterController2D controller;
+    public Animator animator;
+    public float runSpeed = 40f;
 
-	public Met_CharacterController2D controller;
-	public Animator animator;
+    private InputActionMap playerActions;
+    private InputAction moveAction;
+    private InputAction jumpAction;
+    private InputAction dashAction;
+    private InputAction attackAction;
+    private InputAction throwAction;
+    private float horizontalMove;
+    private bool jump;
+    private bool dash;
 
-	public float runSpeed = 40f;
+    public bool AttackPressedThisFrame => attackAction != null && attackAction.WasPressedThisFrame();
+    public bool ThrowPressedThisFrame => throwAction != null && throwAction.WasPressedThisFrame();
+    public InputActionAsset InputActions => inputActions;
 
-	float horizontalMove = 0f;
-	bool jump = false;
-	bool dash = false;
+    private void Awake()
+    {
+        if (controller == null) controller = GetComponent<Met_CharacterController2D>();
+        if (animator == null) animator = GetComponent<Animator>();
 
-	void Update () {
+        if (inputActions != null)
+            playerActions = inputActions.FindActionMap("Player", false);
+        if (playerActions == null)
+        {
+            Debug.LogError("El jugador necesita el mapa Player del Input System.", this);
+            enabled = false;
+            return;
+        }
 
-		horizontalMove = Input.GetAxisRaw("Horizontal") * runSpeed;
+        moveAction = playerActions.FindAction("Move", true);
+        jumpAction = playerActions.FindAction("Jump", true);
+        dashAction = playerActions.FindAction("Dash", true);
+        attackAction = playerActions.FindAction("Attack", true);
+        throwAction = playerActions.FindAction("Throw", true);
+    }
 
-		animator.SetFloat("Speed", Mathf.Abs(horizontalMove));
+    private void OnEnable()
+    {
+        if (playerActions != null) playerActions.Enable();
+    }
 
-		if (Input.GetKeyDown(KeyCode.Z))
-		{
-			jump = true;
-		}
+    private void OnDisable()
+    {
+        if (playerActions != null) playerActions.Disable();
+        horizontalMove = 0f;
+        jump = false;
+        dash = false;
+    }
 
-		if (Input.GetKeyDown(KeyCode.C))
-		{
-			dash = true;
-		}
+    private void Update()
+    {
+        float direction = moveAction.ReadValue<Vector2>().x;
+        // El mando tiene zona muerta en el asset; este umbral evita pequeñas derivas residuales.
+        if (Mathf.Abs(direction) < 0.2f) direction = 0f;
+        horizontalMove = direction * runSpeed;
+        animator.SetFloat("Speed", Mathf.Abs(horizontalMove));
 
-	}
+        if (jumpAction.WasPressedThisFrame()) jump = true;
+        if (dashAction.WasPressedThisFrame()) dash = true;
+    }
 
-	public void OnFall()
-	{
-		animator.SetBool("IsJumping", true);
-	}
+    public void OnFall()
+    {
+        animator.SetBool("IsJumping", true);
+    }
 
-	public void OnLanding()
-	{
-		animator.SetBool("IsJumping", false);
-	}
+    public void OnLanding()
+    {
+        animator.SetBool("IsJumping", false);
+    }
 
-	void FixedUpdate ()
-	{
-		controller.Move(horizontalMove * Time.fixedDeltaTime, jump, dash);
-		jump = false;
-		dash = false;
-	}
+    private void FixedUpdate()
+    {
+        controller.Move(horizontalMove * Time.fixedDeltaTime, jump, dash);
+        jump = false;
+        dash = false;
+    }
 }
-

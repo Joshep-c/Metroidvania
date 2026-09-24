@@ -7,13 +7,20 @@ public class KillZone : MonoBehaviour
 {
     void OnTriggerEnter2D(Collider2D col)
     {
-        if (col.gameObject.tag == "Player")
+        if (col.CompareTag("Player"))
         {
-            SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
+            if (GameManager.Instance != null)
+                GameManager.Instance.PlayerDied();
+            else
+                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
         else
         {
-            Destroy(col.gameObject);
+            Ally ally = col.GetComponentInParent<Ally>();
+            Met_Enemy patrol = col.GetComponentInParent<Met_Enemy>();
+            if (ally != null) ally.life = 0f;
+            else if (patrol != null) patrol.life = 0f;
+            else Destroy(col.gameObject);
         }
     }
 }

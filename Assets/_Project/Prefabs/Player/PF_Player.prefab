@@ -90,7 +90,7 @@ MonoBehaviour:
   m_AirControl: 1
   m_WhatIsGround:
     serializedVersion: 2
-    m_Bits: 53
+    m_Bits: 1048576
   m_GroundCheck: {fileID: 4291727345091452}
   m_WallCheck: {fileID: 4986330650710208}
   canDoubleJump: 0
@@ -140,13 +140,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   dmgValue: 4
-  throwableObject: {fileID: 5532974359214069763, guid: 340067e8e5a097546ad175f1d00a6ece,
+  throwableObject: {fileID: 4901867753151032438, guid: c3f62606ba6f8104f842492d1088ce22,
     type: 3}
   attackCheck: {fileID: 4370582630649528}
   animator: {fileID: 95975118031919256}
   canAttack: 1
   isTimeToCheck: 0
   cam: {fileID: 0}
+  attackRadius: 1.4
 --- !u!114 &114145887554720856
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -159,6 +160,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8644d33345e77614ba3ace9c18398d0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   controller: {fileID: 114231493902538710}
   animator: {fileID: 95975118031919256}
   runSpeed: 40

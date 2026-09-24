@@ -8,26 +8,46 @@ public class ThrowableProjectile : MonoBehaviour
 	public bool hasHit = false;
 	public float speed = 15f;
 	public GameObject owner;
+	private Rigidbody2D rb;
+
+	void Awake()
+	{
+		rb = GetComponent<Rigidbody2D>();
+		SpriteRenderer renderer = GetComponent<SpriteRenderer>();
+		if (renderer != null)
+		{
+			renderer.sprite = CombatVisuals.Projectile;
+			renderer.color = new Color(1f, 0.5f, 0.2f);
+			renderer.sortingOrder = 10;
+		}
+		Destroy(gameObject, 5f);
+	}
 
     void FixedUpdate()
     {
-		if ( !hasHit)
-		GetComponent<Rigidbody2D>().linearVelocity = direction * speed;
+		if (!hasHit)
+			rb.linearVelocity = direction.normalized * speed;
 	}
 
 	void OnCollisionEnter2D(Collision2D collision)
 	{
-		if (collision.gameObject.tag == "Player")
+		if (owner != null && collision.transform.root == owner.transform.root) return;
+		if (collision.gameObject.CompareTag("Player"))
 		{
-			collision.gameObject.GetComponent<Met_CharacterController2D>().ApplyDamage(2f, transform.position);
+			Met_CharacterController2D player = collision.gameObject.GetComponent<Met_CharacterController2D>();
+			if (player != null) player.ApplyDamage(2f, transform.position);
 			Destroy(gameObject);
 		}
-		else if ( owner != null && collision.gameObject != owner && collision.gameObject.tag == "Enemy" )
+		else if (collision.gameObject.CompareTag("Enemy"))
 		{
-			collision.gameObject.SendMessage("ApplyDamage", Mathf.Sign(direction.x) * 2f);
+			Ally ally = collision.gameObject.GetComponentInParent<Ally>();
+			Met_Enemy patrol = collision.gameObject.GetComponentInParent<Met_Enemy>();
+			float damage = Mathf.Sign(direction.x) * 2f;
+			if (ally != null) ally.ApplyDamage(damage);
+			else if (patrol != null) patrol.ApplyDamage(damage);
 			Destroy(gameObject);
 		}
-		else if (collision.gameObject.tag != "Enemy" && collision.gameObject.tag != "Player")
+		else
 		{
 			Destroy(gameObject);
 		}
