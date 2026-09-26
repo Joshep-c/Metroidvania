@@ -39,6 +39,9 @@ TagManager:
   - PlayerDrop
   - Platform
   m_SortingLayers:
+  - name: Background
+    uniqueID: 1248660723
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
@@ -51,5 +54,9 @@ TagManager:
   - name: Front
     uniqueID: 3405993979
     locked: 0
+  - name: enemy
+    uniqueID: 718629559
+    locked: 0
   m_RenderingLayers:
   - Default
+  m_MigratedRenderPipelines: []
